@@ -1,0 +1,386 @@
+/* ============================================================
+   Stop Frames & Loops — портфолио
+   Светлая редакционная сетка + разбросанный коллаж
+   ============================================================ */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+:root {
+  --paper: #f7f5f1;
+  --ink: #16130f;
+  --muted: #8b8478;
+  --accent: #c2314c;          /* акцент взят из цвета губ в кадрах */
+  --hair: rgba(22, 19, 15, .16);
+
+  --display: 'Playfair Display', 'Didot', 'Times New Roman', serif;
+  --mono: 'JetBrains Mono', ui-monospace, 'SF Mono', SFMono-Regular, Menlo, monospace;
+
+  --maxw: 1260px;
+  --pad: clamp(10.5px, 3.4vw, 42px);
+  --gap: clamp(7.5px, 1.4vw, 19.5px);
+
+  --k: 0.75px;                   /* множитель вертикальных сдвигов плиток */
+  --rk: 0deg;                 /* множитель наклонов: 0 — плитки строго по сетке,
+                                 1deg — вернуть микро-повороты из --rot у плиток */
+}
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--mono);
+  counter-reset: tile;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection { background: var(--accent); color: var(--paper); }
+
+:focus-visible { outline: 1.5px solid var(--accent); outline-offset: 2.25px; }
+
+/* ── зерно поверх страницы ─────────────────────────────────── */
+.grain {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  pointer-events: none;
+  mix-blend-mode: multiply;
+  opacity: .55;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='.22'/%3E%3C/svg%3E");
+}
+
+/* ══ ШАПКА ═════════════════════════════════════════════════ */
+.hero {
+  max-width: var(--maxw);
+  margin: 0 auto;
+  padding: clamp(12px, 2.6vw, 25.5px) var(--pad) 0;
+}
+
+.hero-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;      /* логотип стоит между подписями, по центру строки */
+  gap: 1em;
+  padding-bottom: 9px;
+  border-bottom: 0.75px solid var(--hair);
+  font: 400 clamp(6.75px, .72vw, 8.25px)/1 var(--mono);
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+/* боковые подписи разной длины: равняем ячейки, иначе логотип уезжает от центра */
+.hero-meta > span { flex: 1 1 0; }
+.hero-meta > span:last-child { text-align: right; }
+
+/* Рисованный логотип — марка в верхней строке, между подписями. */
+.logo {
+  margin: 0;
+  flex: 0 0 auto;
+  width: clamp(108px, 22vw, 285px);
+}
+.logo img { display: block; width: 100%; height: auto; }
+
+/* .tile ниже в файле тоже задаёт margin-top — нужна специфичность повыше */
+.tile.hero-strip { margin-top: clamp(18px, 4vw, 49.5px); }
+
+.scroll-hint {
+  margin: clamp(10.5px, 2.2vw, 22.5px) 0 0;
+  font: 300 11.25px/1 var(--mono);
+  color: var(--muted);
+  animation: bob 2.6s ease-in-out infinite;
+}
+@keyframes bob {
+  0%, 100% { transform: translateY(0); opacity: .5; }
+  50%      { transform: translateY(5.25px); opacity: 1; }
+}
+
+/* ══ КОЛЛАЖ ════════════════════════════════════════════════ */
+.collage {
+  max-width: var(--maxw);
+  margin: 0 auto;
+  padding: clamp(33px, 7.5vw, 97.5px) var(--pad) clamp(22.5px, 5vw, 60px);
+}
+
+.band {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  column-gap: var(--gap);
+  align-items: start;
+}
+.band + .band { margin-top: clamp(21px, 6.4vw, 81px); }
+
+/* ── плитка ────────────────────────────────────────────────── */
+.tile {
+  counter-increment: tile;
+  margin-top: calc(var(--dy, 0) * var(--k));
+  opacity: 0;
+  transform: rotate(calc(var(--rot, 0) * var(--rk))) translateY(21px);
+  transition: opacity .9s ease, transform 1.15s cubic-bezier(.16, .84, .24, 1);
+}
+.tile.in { opacity: 1; transform: rotate(calc(var(--rot, 0) * var(--rk))); }
+
+.band > .tile {
+  grid-column: var(--c) / span var(--s);
+  grid-row: var(--r, auto);        /* --r:1 у пары плиток = намеренное наложение */
+}
+
+/* плитка, наклеенная поверх соседней: обводка цветом бумаги */
+.tile.over { position: relative; z-index: 3; }
+.tile.over .frame {
+  box-shadow:
+    0 0 0 clamp(3.75px, .6vw, 9px) var(--paper),
+    0 0 0 calc(clamp(3.75px, .6vw, 9px) + 0.75px) rgba(22, 19, 15, .1);
+}
+/* подпись наклеенной плитки лежит поверх соседнего кадра — нужна плашка */
+.tile.over .cap {
+  background: var(--paper);
+  padding: 3.75px 5.25px 3px;
+  margin-left: calc(-1 * clamp(3.75px, .6vw, 9px));
+  margin-right: calc(-1 * clamp(3.75px, .6vw, 9px));
+}
+
+.frame-wrap { margin: 0; }
+
+.frame {
+  position: relative;
+  overflow: hidden;
+  background: #dcd7ce;
+  box-shadow: 0 0 0 0.75px rgba(22, 19, 15, .09);
+  cursor: zoom-in;
+}
+
+.frame img,
+.frame video {
+  display: block;
+  width: 100%;
+  height: auto;
+  transform: scale(1.001);
+  transition: transform 1.2s cubic-bezier(.16, .84, .24, 1);
+}
+.tile:hover .frame img,
+.tile:hover .frame video { transform: scale(1.045); }
+
+.frame::after {
+  content: "↗";
+  position: absolute;
+  top: 5.25px;
+  right: 6.75px;
+  font: 400 9.75px/1 var(--mono);
+  color: #fff;
+  opacity: 0;
+  mix-blend-mode: difference;
+  transition: opacity .35s ease;
+}
+.tile:hover .frame::after { opacity: .85; }
+
+/* ── подпись: номер считает CSS-счётчик ────────────────────── */
+.cap {
+  display: flex;
+  align-items: baseline;
+  gap: .7em;
+  margin-top: 6.75px;
+  font: 400 clamp(6.75px, .62vw, 8.25px)/1.2 var(--mono);
+  letter-spacing: .13em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.cap::before {
+  content: counter(tile, decimal-leading-zero);
+  color: var(--ink);
+  transition: color .3s ease;
+}
+.cap .kind, .cap .src { white-space: nowrap; }
+.cap .src { margin-left: auto; opacity: .62; }
+.tile:hover .cap::before { color: var(--accent); }
+
+/* ══ ПОДВАЛ ════════════════════════════════════════════════ */
+.foot {
+  max-width: var(--maxw);
+  margin: 0 auto;
+  padding: clamp(36px, 8vw, 105px) var(--pad) clamp(34.5px, 5vw, 55.5px);
+  border-top: 0.75px solid var(--hair);
+  display: grid;
+  gap: clamp(15px, 2.6vw, 28.5px);
+}
+
+.contact {
+  justify-self: start;
+  font-family: var(--display);
+  font-size: clamp(1.425rem, 7.4vw, 4.5rem);
+  font-weight: 500;
+  line-height: .95;
+  letter-spacing: -.025em;
+  color: var(--ink);
+  text-decoration: none;
+  border-bottom: 1.5px solid transparent;
+  transition: color .3s ease, border-color .3s ease;
+}
+.contact:hover { color: var(--accent); border-color: var(--accent); }
+
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: clamp(10.5px, 2vw, 25.5px);
+  font: 400 8.25px/1 var(--mono);
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+.links a {
+  color: var(--ink);
+  text-decoration: none;
+  padding-bottom: 3px;
+  border-bottom: 0.75px solid var(--hair);
+  transition: color .3s ease, border-color .3s ease;
+}
+.links a:hover { color: var(--accent); border-color: var(--accent); }
+
+.rights {
+  margin: clamp(3px, 1vw, 12px) 0 0;
+  font: 300 7.5px/1.5 var(--mono);
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* ══ СЧЁТЧИК КАДРОВ ═══════════════════════════════════════ */
+.counter {
+  position: fixed;
+  left: var(--pad);
+  bottom: 12px;
+  z-index: 80;
+  padding: 6px 8.25px;
+  font: 400 8.25px/1 var(--mono);
+  letter-spacing: .15em;
+  color: var(--muted);
+  background: rgba(247, 245, 241, .76);
+  backdrop-filter: blur(5.25px);
+  border: 0.75px solid var(--hair);
+}
+.counter #count { color: var(--ink); }
+
+/* ══ ЛАЙТБОКС ═════════════════════════════════════════════ */
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: grid;
+  place-items: center;
+  padding: clamp(34.5px, 5vw, 52.5px) clamp(10.5px, 4vw, 52.5px);
+  background: #0d0b0a;
+  opacity: 0;
+  transition: opacity .3s ease;
+}
+.lightbox[hidden] { display: none; }
+.lightbox.show { opacity: 1; }
+
+.lb-figure { margin: 0; display: grid; justify-items: center; }
+
+.lb-media img,
+.lb-media video {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: min(94vw, 1200px);
+  max-height: 82vh;
+}
+
+.lb-cap {
+  margin-top: 11.25px;
+  font: 400 8.25px/1 var(--mono);
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: #8d8579;
+}
+
+.lb-close, .lb-nav {
+  position: absolute;
+  background: none;
+  border: 0;
+  color: var(--paper);
+  font: 400 12.75px/1 var(--mono);
+  padding: 10.5px;
+  cursor: pointer;
+  opacity: .55;
+  transition: opacity .25s ease;
+}
+.lb-close:hover, .lb-nav:hover { opacity: 1; }
+.lightbox :focus-visible { outline-color: rgba(247, 245, 241, .85); }
+.lb-close { top: 6px; right: 7.5px; }
+.lb-prev { left: 3px; top: 50%; transform: translateY(-50%); }
+.lb-next { right: 3px; top: 50%; transform: translateY(-50%); }
+
+/* ══ АДАПТИВ ══════════════════════════════════════════════ */
+@media (max-width: 825px) {
+  :root { --k: 0.4125px; }
+}
+
+@media (max-width: 540px) {
+  :root { --k: 0.15px; }
+
+  /* втроём в одну строку они больше не влезают: логотип уходит на свою строку
+     сверху, подписи остаются под ним по краям */
+  .hero-meta { flex-wrap: wrap; row-gap: 10.5px; }
+  /* flex-basis, а не width: только базис заставляет элемент занять всю строку */
+  .hero-meta > .logo { order: -1; flex: 0 0 100%; width: auto; }
+  .hero-meta > .logo img { max-width: 195px; margin-inline: auto; }
+
+  .band {
+    grid-template-columns: repeat(6, 1fr);
+    row-gap: clamp(19.5px, 7vw, 36px);
+  }
+  .band + .band { margin-top: clamp(19.5px, 7vw, 36px); }
+
+  /* на мобильном пропорции решают ширину, чтобы разнокалиберность осталась */
+  .band > .tile[data-ar] { grid-column: 1 / span 6; grid-row: auto; }
+  .band > .tile[data-ar="port"] { grid-column: 1 / span 4; }
+  .band > .tile[data-ar="port"]:nth-child(even) { grid-column: 3 / span 4; }
+  .band > .tile[data-ar="sq"] { grid-column: 2 / span 4; }
+  .band > .tile[data-ar="sq"]:nth-child(even) { grid-column: 1 / span 4; }
+  .band > .tile[data-ar="tall"] { grid-column: 1 / span 3; }
+  .band > .tile[data-ar="tall"]:nth-child(even) { grid-column: 4 / span 3; }
+
+  .counter { display: none; }
+  .lb-prev { left: -4.5px; }
+  .lb-next { right: -4.5px; }
+}
+
+/* ══ БЕРЕЖНЫЙ РЕЖИМ ═══════════════════════════════════════ */
+@media (prefers-reduced-motion: reduce) {
+  :root { --rk: 0deg; }
+  .tile { opacity: 1; transform: none; transition: none; }
+  .frame img, .frame video { transition: none; }
+  .tile:hover .frame img, .tile:hover .frame video { transform: none; }
+  .scroll-hint { animation: none; }
+  .lightbox { transition: none; }
+  /* лупы не проигрываются сами — помечаем их явно */
+  .frame:has(video)::before {
+    content: "▶ loop";
+    position: absolute;
+    left: 6.75px;
+    bottom: 6px;
+    z-index: 2;
+    font: 400 7.5px/1 var(--mono);
+    letter-spacing: .12em;
+    color: #fff;
+    mix-blend-mode: difference;
+  }
+}
+
+/* ══ ОТКАТ МАСШТАБА НА ТЕЛЕФОНЕ ═══════════════════════════
+   Страница свёрстана в масштабе 75% — так она выглядит при зуме браузера
+   на 75%, как и было задумано для десктопа. Но на телефоне уменьшать
+   нечего: там ширина и так 390px, а кегли упираются в нижние границы
+   clamp(). Поэтому шрифты, подписи и кнопки лайтбокса возвращаем
+   к исходным размерам. */
+@media (max-width: 540px) {
+  .hero-meta { font-size: clamp(9px, .72vw, 11px); }
+  .cap { font-size: clamp(9px, .62vw, 11px); }
+  .links { font-size: 11px; }
+  .rights { font-size: 10px; }
+  .scroll-hint { font-size: 14px; }
+  .lb-cap { font-size: 11px; }
+  .lb-close, .lb-nav { font-size: 17px; padding: 14px; }   /* размер под палец */
+  .hero-meta > .logo img { max-width: 260px; }
+}
